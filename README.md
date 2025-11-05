@@ -41,3 +41,9 @@ python ./eval_scripts/eval.py --input_path ./pred_folder/qwen3b.json --output_pa
 <p align="center">
     <img src="https://github.com/scb-10x/ThaiOCRBench/blob/main/pics/thaiocrbench_eval.png" width="88%" height="60%">
 <p>
+
+
+# Remark
+We did not benchmark Typhoon OCR because:  
+1. The response format is different.  
+2. Typhoon OCR only supports a single task — "Full-page OCR."
