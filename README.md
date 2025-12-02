@@ -51,3 +51,18 @@ python ./eval_scripts/eval.py --input_path ./pred_folder/qwen3b.json --output_pa
 We did not benchmark Typhoon OCR because:  
 1. The response format is different.  
 2. Typhoon OCR only supports a single task — "Document Parsing"
+
+# Citation
+If you use ThaiOCRBench in your research or applications, please cite our work:
+```
+@misc{nonesung2025thaiocrbenchtaskdiversebenchmarkvisionlanguage,
+      title={ThaiOCRBench: A Task-Diverse Benchmark for Vision-Language Understanding in Thai}, 
+      author={Surapon Nonesung and Teetouch Jaknamon and Sirinya Chaiophat and Natapong Nitarach and Chanakan Wittayasakpan and Warit Sirichotedumrong and Adisai Na-Thalang and Kunat Pipatanakul},
+      year={2025},
+      eprint={2511.04479},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2511.04479}, 
+}
+```
+
