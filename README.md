@@ -7,6 +7,10 @@ ThaiOCRBench is the first comprehensive benchmark for evaluating vision-language
 # News 
 * ```2025.10.25``` 🚀 Our paper ThaiOCRBench has been accepted to the IJCNLP-AACL 2025 Main Conference!
 
+👉 **[📄 Read the Paper](https://arxiv.org/abs/2511.04479)**  
+👉 **[💻 Huggingface dataset](https://huggingface.co/datasets/scb10x/ThaiOCRBench)**
+
+
 # Evaluation
 
 ## Environment 
