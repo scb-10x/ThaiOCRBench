@@ -19,10 +19,11 @@ def get_args():
     parser.add_argument("--output_path", type=str, required=True)
     parser.add_argument("--hf_token", type=str, required=True)
     parser.add_argument("--max_samples", type=int, default=None)
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for processing (default: 32)")
     return parser.parse_args()
 
 
-def run_qwen_vllm(model_path, dataset, output_path, max_tokens):
+def run_qwen_vllm(model_path, dataset, output_path, max_tokens, batch_size=32):
     print(f"Loading processor and model from {model_path}")
     processor = AutoProcessor.from_pretrained(model_path)
     llm = LLM(
@@ -40,35 +41,57 @@ def run_qwen_vllm(model_path, dataset, output_path, max_tokens):
     )
 
     predictions = []
+    dataset_length = len(dataset)
 
-    
-    for data in tqdm(dataset):
-        image_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image", "image": data["image"]},
-                    {"type": "text", "text": data["question"]}
-                ],
-            }
-        ]
+    # Process dataset in batches
+    for batch_start in tqdm(range(0, dataset_length, batch_size), desc="Processing batches"):
+        batch_end = min(batch_start + batch_size, dataset_length)
+        batch_data = dataset.select(range(batch_start, batch_end))
 
-        prompt = processor.apply_chat_template(image_messages, tokenize=False, add_generation_prompt=True)
-        image_inputs, _ = process_vision_info(image_messages)
-        mm_data = {"image": image_inputs} if image_inputs else {}
+        # Phase A: Collect prompts for this batch
+        all_prompt = []
+        data_ref = []
 
-        llm_inputs = {"prompt": prompt, "multi_modal_data": mm_data}
-        outputs = llm.generate([llm_inputs], sampling_params=sampling_params)
-        prediction = outputs[0].outputs[0].text
+        for data in batch_data:
+            image_messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": data["image"]},
+                        {"type": "text", "text": data["question"]}
+                    ],
+                }
+            ]
 
-        predictions.append({
-            "type": data["Task"],
-            "id": data["Id"],
-            "question": data["question"],
-            "answers": [data["answer"]],
-            "predict": prediction
-        })
+            prompt = processor.apply_chat_template(image_messages, tokenize=False, add_generation_prompt=True)
+            image_inputs, _ = process_vision_info(image_messages)
+            mm_data = {"image": image_inputs} if image_inputs else {}
 
+            llm_inputs = {"prompt": prompt, "multi_modal_data": mm_data}
+            all_prompt.append(llm_inputs)
+            data_ref.append({
+                "Task": data["Task"],
+                "Id": data["Id"],
+                "question": data["question"],
+                "answer": data["answer"]
+            })
+
+        # Phase B: Batch inference
+        outputs = llm.generate(all_prompt, sampling_params=sampling_params)
+
+        # Phase C: Process batch outputs
+        for output, data_info in zip(outputs, data_ref):
+            prediction = output.outputs[0].text
+
+            predictions.append({
+                "type": data_info["Task"],
+                "id": data_info["Id"],
+                "question": data_info["question"],
+                "answers": [data_info["answer"]],
+                "predict": prediction
+            })
+
+        # Phase D: Save after each batch
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(predictions, f, indent=2, ensure_ascii=False)
 
@@ -648,9 +671,9 @@ if __name__ == "__main__":
     elif args.model_name == "gpt4o":
         run_gpt4o(dataset, args.output_path)
     elif args.model_name == "qwen7b":
-        run_qwen_vllm("Qwen/Qwen2.5-VL-7B-Instruct", dataset, args.output_path, max_tokens=11000)
+        run_qwen_vllm("Qwen/Qwen2.5-VL-7B-Instruct", dataset, args.output_path, max_tokens=11000, batch_size=args.batch_size)
     elif args.model_name == "qwen3b":
-        run_qwen_vllm("Qwen/Qwen2.5-VL-3B-Instruct", dataset, args.output_path, max_tokens=11000)
+        run_qwen_vllm("Qwen/Qwen2.5-VL-3B-Instruct", dataset, args.output_path, max_tokens=11000, batch_size=args.batch_size)
     elif args.model_name == "gemma4b":
         run_gemma3_vllm("google/gemma-3-4b-it", dataset, args.output_path, max_tokens=11000)
     elif args.model_name == "gemma27b":
