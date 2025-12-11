@@ -10,3 +10,5 @@ jieba
 Polygon3
 tqdm
 ipdb
+qwen-vl-utils
+datasets
